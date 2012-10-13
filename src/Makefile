@@ -29,4 +29,4 @@ $(INOTIFY):
 
 $(EGGD): $(EGGD_GO) $(INOTIFY)
 	$(E) "  GO    $@"
-	$(Q) GOPATH=$(GOPATH) $(GO) $(GOFLAGS) build $<
+	$(Q) GOPATH=$(GOPATH) $(GO) $(GOFLAGS) build $^
