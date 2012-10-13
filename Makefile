@@ -18,4 +18,4 @@ clean:
 	$(Q) make -C src clean
 
 $(EGGD):
-	$(Q) GOPATH=$(GOPATH) make -C src $@
+	$(Q) GOPATH=$(GOPATH) make -C src
