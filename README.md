@@ -1,8 +1,9 @@
 eggd
 ====
 
-eggd is an automated git and foreman deployment daemon for Procfile apps on
-Amazon EC2 instances.
+eggd is a git and foreman autodeploy daemon for Procfile apps on Amazon EC2
+instances. It's written in Go and uses an interface to the Linux filesystem
+<code>inotify</code> API to restart foreman when a git push is detected.
 
 (Experimental, not for general use yet.)
 
@@ -13,7 +14,7 @@ You will need Go installed. Running
 
     sudo apt-get install golang
 
-suffices. To build and install to <code>/usr/local/bin</code>:
+suffices. To build and install eggd to <code>/usr/local/bin</code>:
 
     git clone https://github.com/learningcurve/eggd.git
     cd eggd && make && sudo make install
