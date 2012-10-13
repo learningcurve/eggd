@@ -18,4 +18,6 @@ clean:
 	$(Q) make -C src clean
 
 $(EGGD):
+	$(Q) git submodule init
+	$(Q) git submodule update
 	$(Q) GOPATH=$(GOPATH) make -C src
