@@ -1,0 +1,3 @@
+[submodule "src/inotify"]
+	path = src/inotify
+	url = https://github.com/mb0/inotify
