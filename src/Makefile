@@ -2,13 +2,15 @@ E       := @echo
 Q       := @
 
 INSTALLTOOL := install
-GO      := go build
+GO      := go
 GOFLAGS := 
 
-EGGD    := eggd
-SOURCES := eggd.go
+INOTIFY := inotify
 
-.PHONY: all install clean
+EGGD    := eggd
+EGGD_GO := eggd.go
+
+.PHONY: all install clean $(INOTIFY)
 
 all: $(EGGD)
 
@@ -21,8 +23,10 @@ install:
 clean:
 	$(Q) rm -f $(EGGD)
 
-$(EGGD): $(SOURCES)
+$(INOTIFY):
 	$(E) "  GO    $@"
-	$(Q) make -C inotify
-	$(Q) GOPATH=$(GOPATH) $(GO) $(GOFLAGS) $<
-	$(E) "Built $@"
+	$(Q) GOPATH=$(GOPATH) $(GO) $(GOFLAGS) install $@
+
+$(EGGD): $(EGGD_GO) $(INOTIFY)
+	$(E) "  GO    $@"
+	$(Q) GOPATH=$(GOPATH) $(GO) $(GOFLAGS) build $<
