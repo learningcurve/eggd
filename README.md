@@ -9,8 +9,14 @@ Amazon EC2 instances.
 Installation
 ------------
 
+To build and install to <code>/usr/local/bin</code>:
+
     git clone https://github.com/learningcurve/eggd.git
     cd eggd && make && sudo make install
+
+Set the variable <code>$INSTALL</code> to change the path.
+
+TODO: upstart support.
 
 Usage
 -----
