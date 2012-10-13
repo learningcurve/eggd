@@ -24,6 +24,8 @@ clean:
 	$(Q) rm -f $(EGGD)
 
 $(INOTIFY):
+	$(Q) git submodule init
+	$(Q) git submodule update
 	$(E) "  GO    $@"
 	$(Q) GOPATH=$(GOPATH) $(GO) $(GOFLAGS) install $@
 
