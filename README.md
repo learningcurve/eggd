@@ -9,7 +9,11 @@ Amazon EC2 instances.
 Installation
 ------------
 
-To build and install to <code>/usr/local/bin</code>:
+You will need Go installed. Running
+
+    sudo apt-get install golang
+
+suffices. To build and install to <code>/usr/local/bin</code>:
 
     git clone https://github.com/learningcurve/eggd.git
     cd eggd && make && sudo make install
