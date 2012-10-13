@@ -3,13 +3,14 @@ eggd
 
 eggd is an automated git and foreman deployment daemon for Procfile apps on
 Amazon EC2 instances.
+
 (Experimental, not for general use yet.)
 
 Installation
 ------------
 
     git clone https://github.com/learningcurve/eggd.git
-    cd eggd && make && make install
+    cd eggd && make && sudo make install
 
 Usage
 -----
