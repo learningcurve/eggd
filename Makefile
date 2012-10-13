@@ -7,7 +7,7 @@ GOPATH  := $(BASE)
 
 EGGD    := src/eggd
 
-.PHONY: all install clean $(EGGD)
+.PHONY: all install clean
 
 all: $(EGGD)
 

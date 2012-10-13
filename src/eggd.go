@@ -91,7 +91,8 @@ next:
 func initConfig() {
   // Check that the configfile exists.
   Home = os.Getenv("HOME")
-  ConfigName = strings.Join([]string{Home, ".eggconfig"}, "/")
+  //ConfigName = strings.Join([]string{Home, ".eggconfig"}, "/")
+  ConfigName = "/etc/eggconfig"
   fd, e := os.OpenFile(ConfigName, os.O_RDWR | os.O_CREATE, 0644)
   if e != nil { log.Fatal(e) }
   e = fd.Close()
@@ -114,7 +115,7 @@ func initConfig() {
     section := strings.Join([]string{"remote-", strconv.Itoa(count)}, "")
     Config.AddOption(section, "path", os.Args[2])
     Config.WriteConfigFile(ConfigName, 0644, "")
-    return
+    os.Exit(0)
   }
 
   RemoteCount, e = Config.GetInt("global", "count")
