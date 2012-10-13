@@ -27,8 +27,8 @@ Usage
 
 4.  eggd will run the Procfile on your instance. Profit!
 
-Support Platforms
------------------
+Supported Platforms
+-------------------
 
 Currently tested on the Ubuntu Server 12.04 EC2 image.
 
