@@ -2,29 +2,33 @@ package main
 
 import (
   "bytes"
+  "conf"
   "inotify"
   "log"
   "os"
   "os/exec"
+  "strconv"
+  "strings"
   "sync/atomic"
   "time"
 )
 
+var Config *conf.ConfigFile
+var ConfigName string
 var Lock int64
 
-func handle() {
+func handleInotifyEvent() {
   var cmd *exec.Cmd
-  var pid string
-  var pid_out bytes.Buffer
+  //var pid string
+  //var pid_out bytes.Buffer
   var make_out bytes.Buffer
   var e error
 
-  // Atomic Lock.
   if !atomic.CompareAndSwapInt64(&Lock, 0, 1) {
     return
   }
 
-  // Get the pid and stop the server.
+  /*// Get the pid and stop the server.
   log.Println("cat: preparing...")
   cmd = exec.Command("cat", "build/curve_https.pid")
   cmd.Stdout = &pid_out
@@ -42,7 +46,7 @@ func handle() {
   if e != nil {
     log.Println("kill:", e)
     goto next
-  }
+  }*/
 
   // Wait at least a short while before pulling the repo.
   log.Println("sleeping...")
@@ -72,18 +76,47 @@ func handle() {
 
   // Start the server.
   log.Println("start: preparing...")
-  e = exec.Command("build/curve_https").Start()
+  e = exec.Command("foreman", "start").Start()
   if e != nil {
     log.Println("start:", e)
   }
 
 next:
-  // Release the event Lock after all events have been parsed.
   atomic.CompareAndSwapInt64(&Lock, 1, 0)
   return
 }
 
 func main() {
+  // Check that the configfile exists.
+  home := os.Getenv("HOME")
+  ConfigName = strings.Join([]string{home, ".eggconfig"}, "/")
+  fd, e := os.OpenFile(ConfigName, os.O_RDWR | os.O_CREATE, 0644)
+  if e != nil { log.Fatal(e) }
+  e = fd.Close()
+  if e != nil { log.Fatal(e) }
+
+  // Make sure the configfile is set up correctly.
+  Config, e := conf.ReadConfigFile(ConfigName)
+  if e != nil { log.Fatal(e) }
+  Config.AddSection("global")
+  if !Config.HasOption("global", "count") {
+    Config.AddOption("global", "count", "0")
+  }
+  Config.WriteConfigFile(ConfigName, 0644, "")
+
+  // Modify the configfile through cmdline args.
+  if os.Args[1] == "add" && len(os.Args) > 2 {
+    log.Println("adding", os.Args[2], "to eggd path")
+    count, _ := Config.GetInt("global", "count")
+    count = count + 1
+    Config.AddOption("global", "count", strconv.Itoa(count))
+    section := strings.Join([]string{"remote-", strconv.Itoa(count)}, "")
+    Config.AddOption(section, "path", os.Args[2])
+    Config.WriteConfigFile(ConfigName, 0644, "")
+    return
+  }
+
+  // Otherwise start the server.
   watcher, e := inotify.NewWatcher()
   if e != nil { log.Fatal(e) }
   e = watcher.Watch("/home/ubuntu/deploy/server.git")
@@ -96,7 +129,7 @@ func main() {
     select {
     case ev := <-watcher.Event:
       log.Println("event:", ev)
-      go handle()
+      go handleInotifyEvent()
     case err := <-watcher.Error:
       log.Println("error:", err)
     }

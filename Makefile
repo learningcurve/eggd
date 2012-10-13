@@ -7,7 +7,7 @@ GOPATH  := $(BASE)
 
 EGGD    := src/eggd
 
-.PHONY: all install clean
+.PHONY: all install clean $(EGGD)
 
 all: $(EGGD)
 
@@ -16,6 +16,7 @@ install:
 
 clean:
 	$(Q) make -C src clean
+	$(Q) rm -rf pkg
 
 $(EGGD):
 	$(Q) git submodule init
