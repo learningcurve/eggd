@@ -17,11 +17,11 @@ Usage
 1. In your project's git repository, make sure you have a Procfile in the
 project directory and remote set up to a bare repository on your EC2 instance.
 
-2. On your EC2 instance, run
+2. On your EC2 instance, let eggd track your remote repository:
 
-        eggd /path/to/remote/repo.git
+        eggd add /path/to/remote/repo.git
 
-3. In your project repository, your commits to your EC2 remote:
+3. In your project repository, push your commits to your EC2 remote:
 
         git push your-remote your-branch
 
