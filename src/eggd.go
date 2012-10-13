@@ -19,11 +19,7 @@ var Home string
 var Lock int64
 var RemoteCount int
 
-func handleConfigUpdate() {
-  // TODO
-}
-
-func handleGitPush() {
+func handleEvent() {
   var cmd *exec.Cmd
   //var pid string
   //var pid_out bytes.Buffer
@@ -92,29 +88,7 @@ next:
   return
 }
 
-func watchConfig() {
-  log.Println("watching configfile")
-  confWatcher, e := inotify.NewWatcher()
-  if e != nil { log.Fatal(e) }
-  e = confWatcher.Watch(ConfigName)
-  if e != nil { log.Fatal(e) }
-  for {
-    select {
-    case ev := <-confWatcher.Event:
-      log.Println("event:", ev)
-      go handleConfigUpdate()
-    case err := <-confWatcher.Error:
-      log.Println("error:", err)
-    }
-  }
-}
-
-func watchRemote(index int) {
-  log.Println("watching remote", strconv.Itoa(index))
-  // TODO
-}
-
-func main() {
+func initConfig() {
   // Check that the configfile exists.
   Home = os.Getenv("HOME")
   ConfigName = strings.Join([]string{Home, ".eggconfig"}, "/")
@@ -130,7 +104,6 @@ func main() {
   if !Config.HasOption("global", "count") {
     Config.AddOption("global", "count", "0")
   }
-  Config.WriteConfigFile(ConfigName, 0644, "")
 
   // Modify the configfile through cmdline args.
   if len(os.Args) > 2 && os.Args[1] == "add" {
@@ -144,16 +117,36 @@ func main() {
     return
   }
 
-  // Otherwise start the server.
-  //e = os.Chdir("/Home/ubuntu/deploy_local/server")
-  //if e != nil { log.Fatal(e) }
-
-  // Start the event loops. One select always watches the configfile,
-  // while the others watch each repo.
   RemoteCount, e = Config.GetInt("global", "count")
   if e != nil { log.Fatal(e) }
+  Config.WriteConfigFile(ConfigName, 0644, "")
+}
+
+func startWatcher() {
+  // Start the event loops. Use inotify to watch the configfile and each
+  // repository path.
+  watcher, e := inotify.NewWatcher()
+  if e != nil { log.Fatal(e) }
+  log.Println("watching configfile")
+  e = watcher.Watch(ConfigName)
+  if e != nil { log.Fatal(e) }
   for i := 1; i <= RemoteCount; i++ {
-    go watchRemote(i)
+    log.Println("watching remote", strconv.Itoa(i))
+    //e = watcher.Watch()
+    //if e != nil { log.Fatal(e) }
   }
-  watchConfig()
+  for {
+    select {
+    case ev := <-watcher.Event:
+      log.Println("event:", ev)
+      go handleEvent()
+    case err := <-watcher.Error:
+      log.Println("error:", err)
+    }
+  }
+}
+
+func main() {
+  initConfig()
+  startWatcher()
 }

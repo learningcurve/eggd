@@ -2,8 +2,8 @@ eggd
 ====
 
 eggd is a git and foreman autodeploy daemon for Procfile apps on Amazon EC2
-instances. It's written in Go and uses an interface to the Linux filesystem
-<code>inotify</code> API to restart foreman when a git push is detected.
+instances. It's written in Go and uses an interface to the Linux filesystem's
+inotify API to restart foreman when a git push is detected.
 
 (Experimental, not for general use yet.)
 
