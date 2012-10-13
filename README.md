@@ -1,7 +1,13 @@
 eggd
 ====
 
-eggd is an automated git and foreman deployment daemon for Amazon EC2.
+eggd is an automated git and foreman deployment daemon for Amazon EC2 instances.
+
+Installation
+------------
+
+    git clone https://github.com/learningcurve/eggd.git
+    cd eggd && make && make install
 
 Usage
 -----
