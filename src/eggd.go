@@ -93,12 +93,13 @@ next:
 func handleEvent(ev *inotify.Event) {
   var cmd *exec.Cmd
   var cmdStdout bytes.Buffer
+  var cmdStderr bytes.Buffer
   var e error
 
   //log.Println(ev)
   name := ev.Name
 
-  log.Println("getting parent path...")
+  //log.Println("getting parent path...")
   idx := -1
   path := ""
   for i := 0; i < RemoteCount; i++ {
@@ -138,10 +139,12 @@ func handleEvent(ev *inotify.Event) {
     log.Println("running git-clone...")
     cmd = exec.Command("git", "clone", path, ".")
     cmd.Stdout = &cmdStdout
+    cmd.Stderr = &cmdStderr
     e = cmd.Run()
     if e != nil {
       log.Println("git-clone:", e)
       log.Println(cmdStdout.String())
+      log.Println(cmdStderr.String())
       goto next
     }
   } else {
@@ -151,6 +154,7 @@ func handleEvent(ev *inotify.Event) {
   log.Println("running git-pull...")
   cmd = exec.Command("git", "pull", "origin", "master")
   cmd.Stdout = &cmdStdout
+  cmd.Stderr = &cmdStderr
   cmd.Run()
   if e != nil {
     log.Println("git-pull:", e)
@@ -159,7 +163,7 @@ func handleEvent(ev *inotify.Event) {
   }
 
   log.Println("sleeping...")
-  time.Sleep(5 * time.Second)
+  time.Sleep(2 * time.Second)
 
   log.Println("running make...")
   cmd = exec.Command("make")
@@ -168,16 +172,22 @@ func handleEvent(ev *inotify.Event) {
   if e != nil {
     log.Println("make:", e)
     log.Println(cmdStdout.String())
+    log.Println(cmdStderr.String())
     goto next
   }
+
+  log.Println("sleeping...")
+  time.Sleep(2 * time.Second)
 
   log.Println("running foreman...")
   cmd = exec.Command("foreman", "start")
   cmd.Stdout = &cmdStdout
+  cmd.Stderr = &cmdStderr
   e = cmd.Run()
   if e != nil {
     log.Println("foreman:", e)
     log.Println(cmdStdout.String())
+    log.Println(cmdStderr.String())
     goto next
   }
 
