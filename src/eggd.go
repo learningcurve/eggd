@@ -89,7 +89,9 @@ next:
 }
 
 func handleEvent(ev *inotify.Event) {
-  log.Println(ev.Name)
+  if ev != nil {
+    log.Println(ev.Name)
+  }
 }
 
 func initConfig() {
@@ -130,26 +132,32 @@ func initConfig() {
 func startWatcher() {
   // Start the event loops. Use inotify to watch the configfile and each
   // repository path.
+  Config, e := conf.ReadConfigFile(ConfigName)
+  if e != nil { log.Fatal(e) }
   watcher, e := inotify.NewWatcher()
   if e != nil { log.Fatal(e) }
   log.Println("watching configfile")
   e = watcher.Watch(ConfigName)
   if e != nil { log.Fatal(e) }
   for i := 1; i <= RemoteCount; i++ {
-    log.Println("watching remote", strconv.Itoa(i))
+    //log.Println("watching remote", strconv.Itoa(i))
     section := strings.Join([]string{"remote-", strconv.Itoa(i)}, "")
-    path, e := Config.GetString(section, "path")
+    if !Config.HasOption(section, "path") {
+      log.Println("doesnt have path")
+    }
+    path, e := Config.GetRawString(section, "path")
     if e != nil { log.Fatal(e) }
+    log.Println("watching path", path)
     e = watcher.Watch(path)
     if e != nil { log.Fatal(e) }
   }
   for {
     select {
-    case ev := <-watcher.Event:
-      log.Println("event:", ev)
-      go handleEvent(ev)
-    case err := <-watcher.Error:
-      log.Println("error:", err)
+      case ev := <-watcher.Event:
+        log.Println("event:", ev)
+        go handleEvent(ev)
+      case err := <-watcher.Error:
+        log.Println("error:", err)
     }
   }
 }
