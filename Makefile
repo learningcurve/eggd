@@ -19,6 +19,6 @@ clean:
 	$(Q) rm -rf pkg
 
 $(EGGD):
-	$(Q) git submodule init
-	$(Q) git submodule update
-	$(Q) GOPATH=$(GOPATH) make -C src
+	git submodule init
+	git submodule update
+	GOPATH=$(GOPATH) make -C src
