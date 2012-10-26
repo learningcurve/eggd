@@ -17,13 +17,15 @@ var Config *conf.ConfigFile
 var ConfigName string
 var Home string
 var Lock int64
+var Locks []int64
+var Paths []string
 var RemoteCount int
 
 func handleEventOld() {
   var cmd *exec.Cmd
   //var pid string
   //var pid_out bytes.Buffer
-  var make_out bytes.Buffer
+  var makeStdout bytes.Buffer
   var e error
 
   if !atomic.CompareAndSwapInt64(&Lock, 0, 1) {
@@ -69,10 +71,10 @@ func handleEventOld() {
   // Build and install the code.
   log.Println("make: preparing...")
   cmd = exec.Command("make")
-  cmd.Stdout = &make_out
+  cmd.Stdout = &makeStdout
   e = cmd.Run()
   if e != nil {
-    log.Println(make_out.String())
+    log.Println(makeStdout.String())
     log.Println("make:", e)
   }
 
@@ -89,9 +91,89 @@ next:
 }
 
 func handleEvent(ev *inotify.Event) {
-  if ev != nil {
-    log.Println(ev.Name)
+  var cmd *exec.Cmd
+  var makeStdout bytes.Buffer
+  var e error
+
+  log.Println(ev)
+  name := ev.Name
+
+  log.Println("sleeping...")
+  time.Sleep(5 * time.Second)
+
+  log.Println("getting parent path...")
+  idx := -1
+  path := ""
+  for i := 0; i < RemoteCount; i++ {
+    if strings.HasPrefix(name, Paths[i]) {
+      idx = i
+      path = Paths[i]
+      break
+    }
   }
+  if idx == -1 {
+    log.Println("couldnt find parent path")
+    return
+  }
+
+  log.Println("acquiring lock", idx)
+  if !atomic.CompareAndSwapInt64(&Locks[idx], 0, 1) {
+    log.Println("failed to acquire lock", idx)
+    return
+  }
+
+  checkoutPath := strings.Join([]string{"/var/eggd", path}, "/")
+  e = os.MkdirAll(checkoutPath, 0755)
+  if e != nil {
+    log.Println("os.MkdirAll:", e)
+    goto next
+  }
+  e = os.Chdir(checkoutPath)
+  if e != nil {
+    log.Println("os.Chdir:", e)
+    goto next
+  }
+  if os.IsNotExist(os.Chdir(".git")) {
+    e = exec.Command("git", "clone", path).Run()
+    if e != nil {
+      log.Println("git-clone:", e)
+      goto next
+    }
+  } else {
+    os.Chdir("..")
+  }
+
+  log.Println("running git-pull...")
+  e = exec.Command("git", "pull", "origin", "master").Run()
+  if e != nil {
+    log.Println("git-pull:", e)
+    goto next
+  }
+
+  //log.Println("sleeping...")
+  //time.Sleep(5 * time.Second)
+
+  log.Println("running make...")
+  cmd = exec.Command("make")
+  cmd.Stdout = &makeStdout
+  e = cmd.Run()
+  if e != nil {
+    log.Println("make:", e)
+    log.Println(makeStdout.String())
+    goto next
+  }
+
+  log.Println("running foreman...")
+  e = exec.Command("foreman", "start").Start()
+  if e != nil {
+    log.Println("foreman:", e)
+    goto next
+  }
+
+next:
+  log.Println("releasing lock", idx)
+  atomic.CompareAndSwapInt64(&Locks[idx], 1, 0)
+  return
 }
 
 func initConfig() {
@@ -139,22 +221,26 @@ func startWatcher() {
   log.Println("watching configfile")
   e = watcher.Watch(ConfigName)
   if e != nil { log.Fatal(e) }
+  Locks = make([]int64, RemoteCount)
+  Paths = make([]string, RemoteCount)
   for i := 1; i <= RemoteCount; i++ {
-    //log.Println("watching remote", strconv.Itoa(i))
     section := strings.Join([]string{"remote-", strconv.Itoa(i)}, "")
     if !Config.HasOption(section, "path") {
       log.Println("doesnt have path")
+      continue
     }
     path, e := Config.GetRawString(section, "path")
     if e != nil { log.Fatal(e) }
     log.Println("watching path", path)
     e = watcher.Watch(path)
     if e != nil { log.Fatal(e) }
+    Locks[i-1] = 0
+    Paths[i-1] = path
   }
   for {
     select {
       case ev := <-watcher.Event:
-        log.Println("event:", ev)
+        //log.Println("event:", ev)
         go handleEvent(ev)
       case err := <-watcher.Error:
         log.Println("error:", err)
