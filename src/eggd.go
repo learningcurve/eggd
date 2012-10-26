@@ -19,7 +19,7 @@ var Home string
 var Lock int64
 var RemoteCount int
 
-func handleEvent() {
+func handleEventOld() {
   var cmd *exec.Cmd
   //var pid string
   //var pid_out bytes.Buffer
@@ -88,6 +88,10 @@ next:
   return
 }
 
+func handleEvent(ev *inotify.Event) {
+  log.Println(ev.Name)
+}
+
 func initConfig() {
   // Check that the configfile exists.
   Home = os.Getenv("HOME")
@@ -133,14 +137,17 @@ func startWatcher() {
   if e != nil { log.Fatal(e) }
   for i := 1; i <= RemoteCount; i++ {
     log.Println("watching remote", strconv.Itoa(i))
-    //e = watcher.Watch()
-    //if e != nil { log.Fatal(e) }
+    section := strings.Join([]string{"remote-", strconv.Itoa(i)}, "")
+    path, e := Config.GetString(section, "path")
+    if e != nil { log.Fatal(e) }
+    e = watcher.Watch(path)
+    if e != nil { log.Fatal(e) }
   }
   for {
     select {
     case ev := <-watcher.Event:
       log.Println("event:", ev)
-      go handleEvent()
+      go handleEvent(ev)
     case err := <-watcher.Error:
       log.Println("error:", err)
     }
