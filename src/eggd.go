@@ -166,7 +166,7 @@ func handleEvent(ev *inotify.Event) {
   time.Sleep(2 * time.Second)
 
   log.Println("running make...")
-  cmd = exec.Command("make")
+  cmd = exec.Command("sudo", "make")
   cmd.Stdout = &cmdStdout
   e = cmd.Run()
   if e != nil {
@@ -180,7 +180,7 @@ func handleEvent(ev *inotify.Event) {
   time.Sleep(2 * time.Second)
 
   log.Println("running foreman...")
-  cmd = exec.Command("foreman", "start")
+  cmd = exec.Command("sudo", "foreman", "start")
   cmd.Stdout = &cmdStdout
   cmd.Stderr = &cmdStderr
   e = cmd.Run()

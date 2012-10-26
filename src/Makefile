@@ -3,7 +3,7 @@ Q       := @
 
 INSTALLTOOL := install
 UPSTART := /etc/init
-GO      := go
+GO      := /usr/local/go/bin/go
 GOFLAGS := 
 
 CONF    := conf
