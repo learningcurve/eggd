@@ -159,6 +159,7 @@ func handleEvent(ev *inotify.Event) {
   if e != nil {
     log.Println("git-pull:", e)
     log.Println(cmdStdout.String())
+    log.Println(cmdStderr.String())
     goto next
   }
 
@@ -168,6 +169,7 @@ func handleEvent(ev *inotify.Event) {
   log.Println("running make...")
   cmd = exec.Command("sudo", "make")
   cmd.Stdout = &cmdStdout
+  cmd.Stderr = &cmdStderr
   e = cmd.Run()
   if e != nil {
     log.Println("make:", e)
