@@ -25,7 +25,7 @@ func handleEventOld() {
   var cmd *exec.Cmd
   //var pid string
   //var pid_out bytes.Buffer
-  var makeStdout bytes.Buffer
+  var cmdStdout bytes.Buffer
   var e error
 
   if !atomic.CompareAndSwapInt64(&Lock, 0, 1) {
@@ -71,10 +71,10 @@ func handleEventOld() {
   // Build and install the code.
   log.Println("make: preparing...")
   cmd = exec.Command("make")
-  cmd.Stdout = &makeStdout
+  cmd.Stdout = &cmdStdout
   e = cmd.Run()
   if e != nil {
-    log.Println(makeStdout.String())
+    log.Println(cmdStdout.String())
     log.Println("make:", e)
   }
 
@@ -92,14 +92,11 @@ next:
 
 func handleEvent(ev *inotify.Event) {
   var cmd *exec.Cmd
-  var makeStdout bytes.Buffer
+  var cmdStdout bytes.Buffer
   var e error
 
   log.Println(ev)
   name := ev.Name
-
-  log.Println("sleeping...")
-  time.Sleep(5 * time.Second)
 
   log.Println("getting parent path...")
   idx := -1
@@ -122,6 +119,9 @@ func handleEvent(ev *inotify.Event) {
     return
   }
 
+  log.Println("sleeping...")
+  time.Sleep(5 * time.Second)
+
   checkoutPath := strings.Join([]string{"/var/eggd", path}, "/")
   e = os.MkdirAll(checkoutPath, 0755)
   if e != nil {
@@ -134,9 +134,13 @@ func handleEvent(ev *inotify.Event) {
     goto next
   }
   if os.IsNotExist(os.Chdir(".git")) {
-    e = exec.Command("git", "clone", path).Run()
+    log.Println("running git-clone...")
+    cmd = exec.Command("git", "clone", path, ".")
+    cmd.Stdout = &cmdStdout
+    e = cmd.Run()
     if e != nil {
       log.Println("git-clone:", e)
+      log.Println(cmdStdout.String())
       goto next
     }
   } else {
@@ -144,9 +148,12 @@ func handleEvent(ev *inotify.Event) {
   }
 
   log.Println("running git-pull...")
-  e = exec.Command("git", "pull", "origin", "master").Run()
+  cmd = exec.Command("git", "pull", "origin", "master")
+  cmd.Stdout = &cmdStdout
+  cmd.Run()
   if e != nil {
     log.Println("git-pull:", e)
+    log.Println(cmdStdout.String())
     goto next
   }
 
@@ -155,18 +162,21 @@ func handleEvent(ev *inotify.Event) {
 
   log.Println("running make...")
   cmd = exec.Command("make")
-  cmd.Stdout = &makeStdout
+  cmd.Stdout = &cmdStdout
   e = cmd.Run()
   if e != nil {
     log.Println("make:", e)
-    log.Println(makeStdout.String())
+    log.Println(cmdStdout.String())
     goto next
   }
 
   log.Println("running foreman...")
-  e = exec.Command("foreman", "start").Start()
+  cmd = exec.Command("foreman", "start")
+  cmd.Stdout = &cmdStdout
+  e = cmd.Run()
   if e != nil {
     log.Println("foreman:", e)
+    log.Println(cmdStdout.String())
     goto next
   }
 
@@ -240,7 +250,6 @@ func startWatcher() {
   for {
     select {
       case ev := <-watcher.Event:
-        //log.Println("event:", ev)
         go handleEvent(ev)
       case err := <-watcher.Error:
         log.Println("error:", err)
