@@ -92,8 +92,8 @@ next:
 
 func handleEvent(ev *inotify.Event) {
   var cmd *exec.Cmd
-  var cmdStdout bytes.Buffer
-  var cmdStderr bytes.Buffer
+  //var cmdStdout bytes.Buffer
+  //var cmdStderr bytes.Buffer
   var e error
 
   //log.Println(ev)
@@ -138,13 +138,11 @@ func handleEvent(ev *inotify.Event) {
   if os.IsNotExist(os.Chdir(".git")) {
     log.Println("running git-clone...")
     cmd = exec.Command("git", "clone", path, ".")
-    cmd.Stdout = &cmdStdout
-    cmd.Stderr = &cmdStderr
+    cmd.Stdout = os.Stdout
+    cmd.Stderr = os.Stderr
     e = cmd.Run()
     if e != nil {
       log.Println("git-clone:", e)
-      log.Println(cmdStdout.String())
-      log.Println(cmdStderr.String())
       goto next
     }
   } else {
@@ -153,13 +151,11 @@ func handleEvent(ev *inotify.Event) {
 
   log.Println("running git-pull...")
   cmd = exec.Command("git", "pull", "origin", "master")
-  cmd.Stdout = &cmdStdout
-  cmd.Stderr = &cmdStderr
+  cmd.Stdout = os.Stdout
+  cmd.Stderr = os.Stderr
   cmd.Run()
   if e != nil {
     log.Println("git-pull:", e)
-    log.Println(cmdStdout.String())
-    log.Println(cmdStderr.String())
     goto next
   }
 
@@ -168,13 +164,11 @@ func handleEvent(ev *inotify.Event) {
 
   log.Println("running make...")
   cmd = exec.Command("sudo", "make")
-  cmd.Stdout = &cmdStdout
-  cmd.Stderr = &cmdStderr
+  cmd.Stdout = os.Stdout
+  cmd.Stderr = os.Stderr
   e = cmd.Run()
   if e != nil {
     log.Println("make:", e)
-    log.Println(cmdStdout.String())
-    log.Println(cmdStderr.String())
     goto next
   }
 
@@ -183,13 +177,11 @@ func handleEvent(ev *inotify.Event) {
 
   log.Println("running foreman...")
   cmd = exec.Command("sudo", "foreman", "start")
-  cmd.Stdout = &cmdStdout
-  cmd.Stderr = &cmdStderr
+  cmd.Stdout = os.Stdout
+  cmd.Stderr = os.Stderr
   e = cmd.Run()
   if e != nil {
     log.Println("foreman:", e)
-    log.Println(cmdStdout.String())
-    log.Println(cmdStderr.String())
     goto next
   }
 
