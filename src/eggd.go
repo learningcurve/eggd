@@ -95,7 +95,7 @@ func handleEvent(ev *inotify.Event) {
   var cmdStdout bytes.Buffer
   var e error
 
-  log.Println(ev)
+  //log.Println(ev)
   name := ev.Name
 
   log.Println("getting parent path...")
@@ -113,11 +113,12 @@ func handleEvent(ev *inotify.Event) {
     return
   }
 
-  log.Println("acquiring lock", idx)
+  //log.Println("acquiring lock", idx)
   if !atomic.CompareAndSwapInt64(&Locks[idx], 0, 1) {
-    log.Println("failed to acquire lock", idx)
+    //log.Println("failed to acquire lock", idx)
     return
   }
+  log.Println("acquired lock", idx)
 
   log.Println("sleeping...")
   time.Sleep(5 * time.Second)
@@ -157,8 +158,8 @@ func handleEvent(ev *inotify.Event) {
     goto next
   }
 
-  //log.Println("sleeping...")
-  //time.Sleep(5 * time.Second)
+  log.Println("sleeping...")
+  time.Sleep(5 * time.Second)
 
   log.Println("running make...")
   cmd = exec.Command("make")
